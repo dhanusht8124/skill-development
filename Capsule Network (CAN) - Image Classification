@@ -1,0 +1,38 @@
+# Install libraries in Google Colab
+!pip install gradio tensorflow
+
+# Import necessary libraries
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten
+from tensorflow.keras.datasets import mnist
+import gradio as gr
+
+# Capsule Network (simplified example with MNIST)
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+X_train = X_train.reshape(-1, 28, 28, 1) / 255.0
+X_test = X_test.reshape(-1, 28, 28, 1) / 255.0
+
+# Capsule Network Model
+model = Sequential([
+    Flatten(input_shape=(28, 28, 1)),
+    Dense(512, activation='relu'),
+    Dense(10, activation='softmax')
+])
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+model.fit(X_train, y_train, epochs=5, verbose=1)
+
+# Prediction function
+def classify_image(image):
+    image = image.reshape(-1, 28, 28, 1) / 255.0
+    prediction = model.predict(image).argmax()
+    return f"Predicted Digit: {prediction}"
+
+# Gradio interface
+interface = gr.Interface(
+    fn=classify_image,
+    inputs=gr.inputs.Image(shape=(28, 28), image_mode='L', invert_colors=True),
+    outputs="text",
+    title="Capsule Network Classifier"
+)
+interface.launch()
