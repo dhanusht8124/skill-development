@@ -1,0 +1,55 @@
+# Install necessary libraries (run this cell once)
+!pip install transformers torch
+
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+# Choose a pre-trained conversational model
+# Some popular options:
+# - "microsoft/DialoGPT-medium" (good balance of size and performance)
+# - "facebook/blenderbot-400M-distill" (more sophisticated, but larger)
+# - "google/dialog-xlm-crosslingual-large" (for multilingual conversations)
+model_name = "microsoft/DialoGPT-medium"
+
+# Load the tokenizer and model
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
+
+# Start the conversation
+print("Welcome to the interactive Q&A chatbot!")
+print("Type 'quit' to end the conversation.")
+
+conversation_history = []
+
+while True:
+    user_input = input("You: ")
+    if user_input.lower() == "quit":
+        break
+
+    # Encode the user input and add end of utterance token
+    new_user_input_ids = tokenizer.encode(user_input + tokenizer.eos_token, return_tensors='pt')
+
+    # Append the new input to the conversation history
+    bot_input_ids = torch.cat([torch.cat(conversation_history, dim=-1), new_user_input_ids], dim=-1) if conversation_history else new_user_input_ids
+
+    # Generate the chatbot's response
+    with torch.no_grad():
+        output = model.generate(
+            bot_input_ids,
+            max_length=1000,
+            pad_token_id=tokenizer.eos_token_id,
+            num_return_sequences=1,
+            top_p=0.95,
+            top_k=50,
+            temperature=0.8
+        )
+
+    # Decode the chatbot's response
+    response = tokenizer.decode(output[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
+    print(f"Chatbot: {response}")
+
+    # Update the conversation history
+    conversation_history.append(new_user_input_ids)
+    conversation_history.append(tokenizer.encode(response + tokenizer.eos_token, return_tensors='pt'))
+
+print("Thank you for chatting!")
