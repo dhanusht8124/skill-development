@@ -1,0 +1,40 @@
+# Install libraries in Google Colab
+!pip install gradio tensorflow
+
+# Import necessary libraries
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+import gradio as gr
+
+# Sample sequential stock price data
+data = np.array([[100, 102, 104], [102, 104, 106], [104, 106, 108], [106, 108, 110]])  # Example prices
+X = data[:, :-1].reshape(-1, 2, 1)  # Last 2 days' prices
+y = data[:, -1]  # Today's price
+
+# LSTM Model
+model = Sequential([
+    LSTM(10, input_shape=(2, 1)),
+    Dense(1)
+])
+model.compile(optimizer='adam', loss='mse')
+model.fit(X, y, epochs=300, verbose=0)
+
+# Prediction function
+def predict_stock_price(price1, price2):
+    sequence = np.array([price1, price2]).reshape(1, 2, 1)
+    next_price = model.predict(sequence)
+    return f"Predicted Stock Price: ${next_price[0][0]:.2f}"
+
+# Gradio interface
+interface = gr.Interface(
+    fn=predict_stock_price,
+    inputs=[
+        gr.inputs.Number(label="Price 1"),
+        gr.inputs.Number(label="Price 2")
+    ],
+    outputs="text",
+    title="Stock Price Predictor"
+)
+interface.launch()
