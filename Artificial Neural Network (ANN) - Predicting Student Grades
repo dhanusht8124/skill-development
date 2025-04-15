@@ -1,0 +1,36 @@
+# Install libraries in Google Colab
+!pip install gradio tensorflow
+
+# Import necessary libraries
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+import gradio as gr
+
+# Sample dataset (Hours Studied vs Grades)
+data = np.array([[2, 50], [3, 55], [4, 65], [5, 70], [6, 80]])
+X = data[:, 0].reshape(-1, 1)  # Hours studied
+y = data[:, 1]  # Grades
+
+# ANN Model
+model = Sequential([
+    Dense(10, input_dim=1, activation='relu'),
+    Dense(1, activation='linear')
+])
+model.compile(optimizer='adam', loss='mse')
+model.fit(X, y, epochs=500, verbose=0)
+
+# Prediction function
+def predict_grades(hours):
+    grade = model.predict([[hours]])
+    return f"Predicted Grade: {grade[0][0]:.2f}"
+
+# Gradio interface
+interface = gr.Interface(
+    fn=predict_grades,
+    inputs=gr.inputs.Number(label="Hours Studied"),
+    outputs="text",
+    title="Student Grade Predictor"
+)
+interface.launch()
