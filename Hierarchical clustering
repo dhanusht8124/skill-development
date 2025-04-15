@@ -1,0 +1,70 @@
+!pip install gradio scipy scikit-learn pandas matplotlib --quiet  # Install required packages
+
+import gradio as gr
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.cluster.hierarchy as sch
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.preprocessing import StandardScaler
+
+# Function to perform Hierarchical Clustering
+def hierarchical_clustering(file, n_clusters, linkage_method):
+    # Read the uploaded CSV file
+    df = pd.read_csv(file.name)
+
+    # Select only numerical columns for clustering
+    numeric_df = df.select_dtypes(include=[np.number])
+
+    if numeric_df.shape[1] < 2:
+        return "Dataset must have at least two numerical columns!"
+
+    # Standardize data (recommended for clustering)
+    scaler = StandardScaler()
+    scaled_data = scaler.fit_transform(numeric_df)
+
+    # Create a dendrogram
+    plt.figure(figsize=(6, 4))
+    sch.dendrogram(sch.linkage(scaled_data, method=linkage_method))
+    plt.title("Hierarchical Clustering - Dendrogram")
+    plt.xlabel("Data Points")
+    plt.ylabel("Distance")
+    dendrogram_path = "dendrogram.png"
+    plt.savefig(dendrogram_path)
+    plt.close()
+
+    # Perform Agglomerative Clustering
+    hc = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage_method)
+    df['Cluster'] = hc.fit_predict(scaled_data)
+
+    # Scatter plot of the first two features
+    plt.figure(figsize=(6, 4))
+    scatter = plt.scatter(numeric_df.iloc[:, 0], numeric_df.iloc[:, 1], c=df['Cluster'], cmap='rainbow', alpha=0.7)
+    plt.xlabel(numeric_df.columns[0])
+    plt.ylabel(numeric_df.columns[1])
+    plt.title(f'Hierarchical Clustering with {n_clusters} Clusters')
+    plt.colorbar(scatter, label="Cluster")
+    cluster_plot_path = "cluster_plot.png"
+    plt.savefig(cluster_plot_path)
+    plt.close()
+
+    return dendrogram_path, cluster_plot_path
+
+# Create Gradio interface
+iface = gr.Interface(
+    fn=hierarchical_clustering,
+    inputs=[
+        gr.File(label="Upload CSV File"),
+        gr.Slider(2, 10, step=1, value=3, label="Number of Clusters (K)"),
+        gr.Radio(["ward", "complete", "average", "single"], value="ward", label="Linkage Method")
+    ],
+    outputs=[
+        gr.Image(type="filepath", label="Dendrogram"),
+        gr.Image(type="filepath", label="Cluster Visualization")
+    ],
+    title="Hierarchical Clustering with Gradio",
+    description="Upload a CSV file with numerical data and choose the number of clusters to perform Hierarchical Clustering."
+)
+
+# Launch the app
+iface.launch()
