@@ -1,0 +1,27 @@
+# Install libraries in Google Colab
+!pip install gradio langchain
+
+# Import necessary libraries
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import ConversationalChain
+import gradio as gr
+
+# Load two LLM models (mock example)
+llm_1 = ChatOpenAI(temperature=0)
+llm_2 = ChatOpenAI(temperature=0.7)
+
+# Define conversation function
+def converse_chain(input_text):
+    # Simulate responses from two models
+    response_1 = llm_1(input_text)
+    response_2 = llm_2(response_1)
+    return f"LLM 1 Response: {response_1}\nLLM 2 Response: {response_2}"
+
+# Gradio interface
+interface = gr.Interface(
+    fn=converse_chain,
+    inputs=gr.inputs.Textbox(label="Input Question"),
+    outputs="text",
+    title="LangChain with Two LLM Models"
+)
+interface.launch()
