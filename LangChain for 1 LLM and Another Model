@@ -1,0 +1,32 @@
+# Install libraries in Google Colab
+!pip install gradio langchain
+
+# Import necessary libraries
+from langchain.llms import OpenAI
+from langchain.chains import SimpleChain
+import gradio as gr
+
+# Load LLM (example)
+llm = OpenAI(temperature=0)
+
+# Mock Text Classifier
+def text_classifier(text):
+    if "urgent" in text.lower():
+        return "High Priority"
+    else:
+        return "Low Priority"
+
+# Chain function
+def prioritize_task(input_text):
+    llm_response = llm(input_text)  # Use LLM to analyze text
+    priority = text_classifier(llm_response)  # Use classifier for categorization
+    return f"LLM Response: {llm_response}\nPriority: {priority}"
+
+# Gradio interface
+interface = gr.Interface(
+    fn=prioritize_task,
+    inputs=gr.inputs.Textbox(label="Task Description"),
+    outputs="text",
+    title="LangChain with LLM and Classifier"
+)
+interface.launch()
